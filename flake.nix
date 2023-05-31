@@ -7,6 +7,7 @@
         ghc
         cabal-install
         zlib
+        llvm
       ];
     };
   };
