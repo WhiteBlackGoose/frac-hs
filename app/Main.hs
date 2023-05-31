@@ -15,8 +15,14 @@ belongs =
   let 
     maxPrec = 100
     belongs prec seq c
-      | magnitude c >= 2.0 = (255, (255 * prec) `div` maxPrec, 0, 128)
-      | prec == 0 = (255, 0, 128, 0)
+      | magnitude c >= 2.0 = 
+        let
+          frac = fromIntegral prec / fromIntegral maxPrec
+          red = 255 * frac
+          red8 :: Word8 = round red
+        in
+          (255, red8, 0, 255)
+      | prec == 0 = (0, 0, 0, 255)
       | otherwise = belongs (prec-1) seq (seq c)
   in
     belongs maxPrec
@@ -48,4 +54,12 @@ render crit (w, h) (rx, ry, rw, rh) =
 
 main = blankCanvas 3000 $ \ context -> do -- start blank canvas on port 3000
   send context $ do                       -- send commands to this specific context
-    putImageData ((render mandelbrot (400, 400) (-1.5, -1.1, 2.2, 2.2)), [0.0, 0.0])
+    -- putImageData ((render mandelbrot (400, 400) (-1.5, -1.1, 2.2, 2.2)), [0.0, 0.0])
+    let 
+      x = -1.5
+      y = -1.1
+      w = 2.2
+      h = 2.2
+      canvasW = 1000
+      canvasH :: Int = 1000
+    putImageData ((render mandelbrot (canvasW, canvasH) (x, y, w, h)), [0.0, 0.0])
