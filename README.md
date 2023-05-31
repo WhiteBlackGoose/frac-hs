@@ -8,3 +8,7 @@ Then watch `./out.png` with some imageviewer.
 
 ![](./mandel5.gif)
 
+### Fractals
+
+- [Mandelbrot](https://en.wikipedia.org/wiki/Mandelbrot_set)
+- [Julia](https://en.wikipedia.org/wiki/Julia_set)

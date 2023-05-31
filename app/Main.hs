@@ -7,17 +7,18 @@ import Codec.Picture.Types (Image)
 import System.IO (hSetBuffering)
 import GHC.IO.StdHandles (stdin)
 import GHC.IO.Handle (BufferMode(NoBuffering))
+import Codec.Picture.Metadata (Value(String))
 
 type MyReal = Double
 
 type Criterion a b = (RealFloat a, Ord a, Pixel b) => (Complex a -> Complex a) -> Complex a -> b
 
 belongs :: Criterion a PixelRGB8
-belongs = 
-  let 
+belongs =
+  let
     maxPrec :: Int = 50
     belongs prec crit c
-      | magnitude c >= 2.0 = 
+      | magnitude c >= 2.0 =
         let
           frac :: Float = fromIntegral prec / fromIntegral maxPrec
           col = 255 * frac
@@ -39,13 +40,13 @@ mandelbrotInit :: InitialPoint MyReal
 mandelbrotInit _ = 0 :+ 0
 
 -- https://en.wikipedia.org/wiki/Julia_set
-julia :: FractalSeq a
-julia = flip mandelbrot
+julia :: Complex a -> FractalSeq a
+julia c _ z =  mandelbrot c z
 juliaInit :: InitialPoint MyReal
 juliaInit = id
 
 render :: FractalSeq MyReal -> InitialPoint MyReal -> (Int, Int) -> (MyReal, MyReal, MyReal, MyReal) -> Image PixelRGB8
-render crit init (w, h) (rx, ry, rw, rh) = 
+render crit init (w, h) (rx, ry, rw, rh) =
   generateImage (\x y ->
       let
         thX :: MyReal = fromIntegral x / fromIntegral w * rw + rx
@@ -62,7 +63,7 @@ qualityCanvas = 2000
 
 interactiveMovement :: FractalSeq MyReal -> InitialPoint MyReal -> (MyReal, MyReal) -> (MyReal, MyReal) -> (Int, Int) -> IO ()
 interactiveMovement set init (x, y) (w, h) (cw, ch) =
-  do 
+  do
     savePngImage "./out.png" (ImageRGB8 $ render set init (cw, ch) (x, y, w, h))
     input <- getChar
     let zc = 1.2
@@ -83,8 +84,24 @@ interactiveMovement set init (x, y) (w, h) (cw, ch) =
 
 main :: IO ()
 main = do
-  print ("Hello user!" :: String)
+  mapM_ print ([
+    "Hello user!",
+    "Choose fractal",
+    "m for mandelbrot",
+    "j for julia set"
+    ] :: [String])
+  frType <- getLine
+  frac <- case frType of
+      "m" -> return mandelbrot
+      "j" -> do
+        print ("Specify c" :: String)
+        cs <- getLine
+        let c :: Complex MyReal = read cs
+        return (julia c)
+      _ -> do
+        print ("Unrecognized input, defaulting to mandelbrot" :: String)
+        return mandelbrot
   print ("Use + and - to zoom" :: String)
   print ("Use hjkl to navigate" :: String)
   hSetBuffering stdin NoBuffering
-  interactiveMovement julia juliaInit (-1.5, -1.1) (2.2, 2.2) (navCanvas, navCanvas)
+  interactiveMovement frac juliaInit (-1.5, -1.1) (2.2, 2.2) (navCanvas, navCanvas)
