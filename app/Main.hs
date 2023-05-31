@@ -16,7 +16,7 @@ belongs =
       | prec == 0 = True
       | otherwise = belongs (prec-1) seq (seq c)
   in
-    belongs 10
+    belongs 100
 
 mandelbrot :: RealFloat a => Complex a -> Complex a -> Complex a
 mandelbrot c z = z ^ 2 + c
@@ -39,4 +39,4 @@ render crit (w, h) (rx, ry, rw, rh) =
 
 main = blankCanvas 3000 $ \ context -> do -- start blank canvas on port 3000
   send context $ do                       -- send commands to this specific context
-    putImageData ((render (\_ _ -> True) (100, 100) (-2.0, -2.0, 4.0, 4.0)), [0.0, 0.0])
+    putImageData ((render (\_ _ -> True) (300, 300) (-2.0, -2.0, 4.0, 4.0)), [0.0, 0.0])
