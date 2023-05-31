@@ -18,11 +18,11 @@ belongs =
       | magnitude c >= 2.0 = 
         let
           frac = fromIntegral prec / fromIntegral maxPrec
-          red = 255 * frac
-          red8 :: Word8 = round red
+          col = 255 * frac
+          col8 :: Word8 = round col
         in
-          (255, red8, 0, 255)
-      | prec == 0 = (0, 0, 0, 255)
+          (0, 255 - col8 `div` 2, col8 `div` 2, 255)
+      | prec == 0 = (255, 255, 255, 255)
       | otherwise = belongs (prec-1) seq (seq c)
   in
     belongs maxPrec
