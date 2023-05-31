@@ -30,24 +30,29 @@ belongs =
     belongs maxPrec
 
 type FractalSeq a = (RealFloat a) => Complex a -> Complex a -> Complex a
+type InitialPoint a = Complex a -> Complex a
 
 -- https://en.wikipedia.org/wiki/Mandelbrot_set
 mandelbrot :: FractalSeq a
 mandelbrot c z = z ** 2 + c
+mandelbrotInit :: InitialPoint MyReal
+mandelbrotInit _ = 0 :+ 0
 
 -- https://en.wikipedia.org/wiki/Julia_set
 julia :: FractalSeq a
 julia = flip mandelbrot
+juliaInit :: InitialPoint MyReal
+juliaInit = id
 
-render :: FractalSeq MyReal -> (Int, Int) -> (MyReal, MyReal, MyReal, MyReal) -> Image PixelRGB8
-render crit (w, h) (rx, ry, rw, rh) = 
+render :: FractalSeq MyReal -> InitialPoint MyReal -> (Int, Int) -> (MyReal, MyReal, MyReal, MyReal) -> Image PixelRGB8
+render crit init (w, h) (rx, ry, rw, rh) = 
   generateImage (\x y ->
       let
         thX :: MyReal = fromIntegral x / fromIntegral w * rw + rx
         thY :: MyReal = fromIntegral y / fromIntegral h * rh + ry
         c = thX :+ thY
       in
-        belongs (crit c) 0) w h
+        belongs (crit c) (init c)) w h
 
 
 navCanvas :: Int
@@ -55,25 +60,25 @@ navCanvas = 300
 qualityCanvas :: Int
 qualityCanvas = 2000
 
-interactiveMovement :: FractalSeq MyReal -> (MyReal, MyReal) -> (MyReal, MyReal) -> (Int, Int) -> IO ()
-interactiveMovement set (x, y) (w, h) (cw, ch) =
+interactiveMovement :: FractalSeq MyReal -> InitialPoint MyReal -> (MyReal, MyReal) -> (MyReal, MyReal) -> (Int, Int) -> IO ()
+interactiveMovement set init (x, y) (w, h) (cw, ch) =
   do 
-    savePngImage "./out.png" (ImageRGB8 $ render set (cw, ch) (x, y, w, h))
+    savePngImage "./out.png" (ImageRGB8 $ render set init (cw, ch) (x, y, w, h))
     input <- getChar
     let zc = 1.2
     let zcc = (1 - 1/zc) / 2
     let mc = 0.1
     case input of
-      '+' -> interactiveMovement set (x + w * zcc, y + h * zcc) (w/zc, h/zc) (navCanvas, navCanvas)
-      '-' -> interactiveMovement set (x - w * zcc, y - h * zcc) (w*zc, h*zc) (navCanvas, navCanvas)
-      'h' -> interactiveMovement set (x - w * mc, y) (w, h) (navCanvas, navCanvas)
-      'j' -> interactiveMovement set (x, y + h * mc) (w, h) (navCanvas, navCanvas)
-      'k' -> interactiveMovement set (x, y - h * mc) (w, h) (navCanvas, navCanvas)
-      'l' -> interactiveMovement set (x + w * mc, y) (w, h) (navCanvas, navCanvas)
-      'q' -> interactiveMovement set (x + w * mc, y) (w, h) (qualityCanvas, qualityCanvas)
+      '+' -> interactiveMovement set init (x + w * zcc, y + h * zcc) (w/zc, h/zc) (navCanvas, navCanvas)
+      '-' -> interactiveMovement set init (x - w * zcc, y - h * zcc) (w*zc, h*zc) (navCanvas, navCanvas)
+      'h' -> interactiveMovement set init (x - w * mc, y) (w, h) (navCanvas, navCanvas)
+      'j' -> interactiveMovement set init (x, y + h * mc) (w, h) (navCanvas, navCanvas)
+      'k' -> interactiveMovement set init (x, y - h * mc) (w, h) (navCanvas, navCanvas)
+      'l' -> interactiveMovement set init (x + w * mc, y) (w, h) (navCanvas, navCanvas)
+      'q' -> interactiveMovement set init (x + w * mc, y) (w, h) (qualityCanvas, qualityCanvas)
       _ -> do
         putStrLn "Unrecognized input"
-        interactiveMovement set (x, y) (w, h) (cw, ch)
+        interactiveMovement set init (x, y) (w, h) (cw, ch)
 
 
 main :: IO ()
@@ -82,4 +87,4 @@ main = do
   print ("Use + and - to zoom" :: String)
   print ("Use hjkl to navigate" :: String)
   hSetBuffering stdin NoBuffering
-  interactiveMovement julia (-1.5, -1.1) (2.2, 2.2) (navCanvas, navCanvas)
+  interactiveMovement julia juliaInit (-1.5, -1.1) (2.2, 2.2) (navCanvas, navCanvas)
