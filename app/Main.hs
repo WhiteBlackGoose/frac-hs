@@ -1,16 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Main where
-import Graphics.Blank                     -- import the blank canvas
 import Data.Complex (Complex ((:+)), magnitude)
-import Data.Word (Word8)
-import Data.Vector.Unboxed (generate)
+import Codec.Picture (generateImage, Pixel, PixelRGB8 (PixelRGB8), Pixel8, savePngImage, DynamicImage (ImageRGB8))
+import Codec.Picture.Types (Image)
 
-type Color = (Word8, Word8, Word8, Word8)
+type Criterion a b = (RealFloat a, Ord a, Pixel b) => (Complex a -> Complex a) -> Complex a -> b
 
-type Criterion a = (RealFloat a, Ord a) => (Complex a -> Complex a) -> Complex a -> Color
-
-belongs :: Criterion a
+belongs :: Criterion a PixelRGB8
 belongs = 
   let 
     maxPrec :: Int = 100
@@ -19,10 +16,10 @@ belongs =
         let
           frac :: Float = fromIntegral prec / fromIntegral maxPrec
           col = 255 * frac
-          col8 :: Word8 = round col
+          col8 :: Pixel8 = round col
         in
-          (0, 255 - col8 `div` 2, col8 `div` 2, 255)
-      | prec == 0 = (255, 255, 255, 255)
+          PixelRGB8 0 (255 - col8 `div` 2) (col8 `div` 2)
+      | prec == 0 = PixelRGB8 255 255 255
       | otherwise = belongs (prec-1) crit (crit c)
   in
     belongs maxPrec
@@ -30,33 +27,24 @@ belongs =
 mandelbrot :: RealFloat a => Complex a -> Complex a -> Complex a
 mandelbrot c z = z ** 2 + c
 
-render :: (Complex Float -> Complex Float -> Complex Float) -> (Int, Int) -> (Float, Float, Float, Float) -> ImageData
+render :: (Complex Float -> Complex Float -> Complex Float) -> (Int, Int) -> (Float, Float, Float, Float) -> Image PixelRGB8
 render crit (w, h) (rx, ry, rw, rh) = 
-  let
-    vec = generate (w * h * 4) (\i ->
+  generateImage (\x y ->
       let
-        thX :: Float = fromIntegral (i `div` 4 `div` h) / (fromIntegral w) * rw + rx
-        thY :: Float = fromIntegral (i `div` 4 `mod` h) / (fromIntegral h) * rh + ry
+        thX :: Float = fromIntegral x / (fromIntegral w) * rw + rx
+        thY :: Float = fromIntegral y / (fromIntegral h) * rh + ry
         c = thX :+ thY
-        (a, r, g, b) = belongs (crit c) 0
       in
-        case i `mod` 4 of
-          0 -> a
-          1 -> r
-          2 -> g
-          3 -> b
-        )
-  in
-    ImageData w h vec
+        belongs (crit c) 0) w h
 
 
-main = blankCanvas 3000 $ \ context -> do -- start blank canvas on port 3000
-  send context $ do                       -- send commands to this specific context
+main = 
     let 
       x = -1.5
       y = -1.1
       w = 2.2
       h = 2.2
-      canvasW = 300
-      canvasH :: Int = 300
-    putImageData ((render mandelbrot (canvasW, canvasH) (x, y, w, h)), [0.0, 0.0])
+      canvasW = 1000
+      canvasH :: Int = 1000
+    in
+      savePngImage "./out.png" (ImageRGB8 $ render mandelbrot (canvasW, canvasH) (x, y, w, h))
