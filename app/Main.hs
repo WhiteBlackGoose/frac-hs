@@ -1,9 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 import Graphics.Blank                     -- import the blank canvas
-import Data.Complex (Complex, magnitude)
+import Data.Complex (Complex ((:+)), magnitude)
 import Data.Vector.Unboxed.Base (Vector)
-import Data.ByteArray (ByteArray)
 import Data.Word (Word8)
 import Data.Vector.Unboxed (generate)
 
@@ -14,24 +13,30 @@ belongs =
   let 
     belongs prec seq c
       | magnitude c >= 2.0 = False
-      | prec == 1 = True
+      | prec == 0 = True
       | otherwise = belongs (prec-1) seq (seq c)
   in
     belongs 10
 
+mandelbrot :: RealFloat a => Complex a -> Complex a -> Complex a
+mandelbrot c z = z ^ 2 + c
 
-render :: (Criterion a) -> (Int, Int) -> ImageData
-render crit (w, h) = 
+render :: (Criterion a) -> (Int, Int) -> (Float, Float, Float, Float) -> ImageData
+render crit (w, h) (rx, ry, rw, rh) = 
   let
-    vec :: Data.Vector.Unboxed.Base.Vector Word8 = generate (w * h) (\i -> fromIntegral( i `mod` h `div` w) :: Word8)
+    -- vec :: Vector Word8 = generate (w * h * 4) (\i -> fromIntegral( i `mod` h `div` w) :: Word8)
+    -- vec :: Vector Word8 = generate (w * h * 4) (\i -> if i `mod` 4 == 0 then 128 else 255)
+    vec = generate (w * h * 4) (\i ->
+      let
+        thX :: Float = fromIntegral (i `div` 4 `div` h) / (fromIntegral w) * rw + rx
+        thY :: Float = fromIntegral (i `div` 4 `mod` h) / (fromIntegral h) * rh + ry
+        c = thX :+ thY
+      in
+        if belongs (mandelbrot c) 0 then 128 else 0)
   in
     ImageData w h vec
 
 
 main = blankCanvas 3000 $ \ context -> do -- start blank canvas on port 3000
   send context $ do                       -- send commands to this specific context
-    moveTo(50,50)
-    lineTo(200,100)
-    lineWidth 10
-    strokeStyle "red"
-    stroke()                              -- this draws the ink into the canvas
+    putImageData ((render (\_ _ -> True) (100, 100) (-2.0, -2.0, 4.0, 4.0)), [0.0, 0.0])
