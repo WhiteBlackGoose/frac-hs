@@ -6,6 +6,7 @@
         haskell-language-server
         ghc
         cabal-install
+        zlib
       ];
     };
   };
