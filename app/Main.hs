@@ -23,7 +23,7 @@ belongs (crit :: Complex a -> Complex a) (co :: Complex a) =
   in
     if iter == maxPrec then
       PixelRGB8 255 255 255
-    else 
+    else
       let
         frac :: Float = 1 - fromIntegral iter / fromIntegral maxPrec
         col = 255 * frac
@@ -31,30 +31,26 @@ belongs (crit :: Complex a -> Complex a) (co :: Complex a) =
       in
         PixelRGB8 0 (255 - col8) (col8 `div` 2)
 
-type FractalSeq a = (RealFloat a) => Complex a -> Complex a -> Complex a
-type InitialPoint a = Complex a -> Complex a
+type Fractal a = (RealFloat a) => Complex a -> (Complex a, Complex a -> Complex a)
 
 -- https://en.wikipedia.org/wiki/Mandelbrot_set
-mandelbrot :: FractalSeq a
-mandelbrot c z = z ** 2 + c
-mandelbrotInit :: InitialPoint MyReal
-mandelbrotInit _ = 0 :+ 0
+mandelbrot :: Fractal a
+mandelbrot c = (0, \z -> z ** 2 + c)
 
 -- https://en.wikipedia.org/wiki/Julia_set
-julia :: Complex a -> FractalSeq a
-julia c _ z =  mandelbrot c z
-juliaInit :: InitialPoint MyReal
-juliaInit = id
+julia :: Complex a -> Fractal a
+julia p c = (c, snd $ mandelbrot p)
 
-render :: FractalSeq MyReal -> InitialPoint MyReal -> (Int, Int) -> (MyReal, MyReal, MyReal, MyReal) -> Image PixelRGB8
-render crit init (w, h) (rx, ry, rw, rh) =
+render :: Fractal MyReal -> (Int, Int) -> (MyReal, MyReal, MyReal, MyReal) -> Image PixelRGB8
+render frac (w, h) (rx, ry, rw, rh) =
   generateImage (\x y ->
       let
         thX :: MyReal = fromIntegral x / fromIntegral w * rw + rx
         thY :: MyReal = fromIntegral y / fromIntegral h * rh + ry
         c = thX :+ thY
+        (crit, init) = frac c
       in
-        belongs (crit c) (init c)) w h
+        belongs crit init) w h
 
 
 navCanvas :: Int
@@ -62,25 +58,25 @@ navCanvas = 300
 qualityCanvas :: Int
 qualityCanvas = 2000
 
-interactiveMovement :: FractalSeq MyReal -> InitialPoint MyReal -> (MyReal, MyReal) -> (MyReal, MyReal) -> (Int, Int) -> IO ()
-interactiveMovement set init (x, y) (w, h) (cw, ch) =
+interactiveMovement :: Fractal MyReal -> (MyReal, MyReal) -> (MyReal, MyReal) -> (Int, Int) -> IO ()
+interactiveMovement frac (x, y) (w, h) (cw, ch) =
   do
-    savePngImage "./out.png" (ImageRGB8 $ render set init (cw, ch) (x, y, w, h))
+    savePngImage "./out.png" (ImageRGB8 $ render frac (cw, ch) (x, y, w, h))
     input <- getChar
     let zc = 1.2
     let zcc = (1 - 1/zc) / 2
     let mc = 0.1
     case input of
-      '+' -> interactiveMovement set init (x + w * zcc, y + h * zcc) (w/zc, h/zc) (navCanvas, navCanvas)
-      '-' -> interactiveMovement set init (x - w * zcc, y - h * zcc) (w*zc, h*zc) (navCanvas, navCanvas)
-      'h' -> interactiveMovement set init (x - w * mc, y) (w, h) (navCanvas, navCanvas)
-      'j' -> interactiveMovement set init (x, y + h * mc) (w, h) (navCanvas, navCanvas)
-      'k' -> interactiveMovement set init (x, y - h * mc) (w, h) (navCanvas, navCanvas)
-      'l' -> interactiveMovement set init (x + w * mc, y) (w, h) (navCanvas, navCanvas)
-      'q' -> interactiveMovement set init (x + w * mc, y) (w, h) (qualityCanvas, qualityCanvas)
+      '+' -> interactiveMovement frac (x + w * zcc, y + h * zcc) (w/zc, h/zc) (navCanvas, navCanvas)
+      '-' -> interactiveMovement frac (x - w * zcc, y - h * zcc) (w*zc, h*zc) (navCanvas, navCanvas)
+      'h' -> interactiveMovement frac (x - w * mc, y) (w, h) (navCanvas, navCanvas)
+      'j' -> interactiveMovement frac (x, y + h * mc) (w, h) (navCanvas, navCanvas)
+      'k' -> interactiveMovement frac (x, y - h * mc) (w, h) (navCanvas, navCanvas)
+      'l' -> interactiveMovement frac (x + w * mc, y) (w, h) (navCanvas, navCanvas)
+      'q' -> interactiveMovement frac (x + w * mc, y) (w, h) (qualityCanvas, qualityCanvas)
       _ -> do
         putStrLn "Unrecognized input"
-        interactiveMovement set init (x, y) (w, h) (cw, ch)
+        interactiveMovement frac (x, y) (w, h) (cw, ch)
 
 
 main :: IO ()
@@ -105,4 +101,4 @@ main = do
   print ("Use + and - to zoom" :: String)
   print ("Use hjkl to navigate" :: String)
   hSetBuffering stdin NoBuffering
-  interactiveMovement frac juliaInit (-1.5, -1.1) (2.2, 2.2) (navCanvas, navCanvas)
+  interactiveMovement frac (-1.5, -1.1) (2.2, 2.2) (navCanvas, navCanvas)
