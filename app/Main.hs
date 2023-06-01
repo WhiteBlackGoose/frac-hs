@@ -8,6 +8,7 @@ import System.IO (hSetBuffering)
 import GHC.IO.StdHandles (stdin)
 import GHC.IO.Handle (BufferMode(NoBuffering))
 import Fractals (Fractal)
+import qualified Fractals (mandelbrot, julia)
 
 type MyReal = Double
 
@@ -66,15 +67,15 @@ main = do
     ] :: [String])
   frType <- getLine
   frac <- case frType of
-      "m" -> return mandelbrot
+      "m" -> return Fractals.mandelbrot
       "j" -> do
         print ("Specify c in format Re :+ Im" :: String)
         cs <- getLine
         let c :: Complex MyReal = read cs
-        return (julia c)
+        return (Fractals.julia c)
       _ -> do
         print ("Unrecognized input, defaulting to mandelbrot" :: String)
-        return mandelbrot
+        return Fractals.mandelbrot
   putStrLn ("Use + and - to zoom" :: String)
   putStrLn ("Use hjkl to navigate" :: String)
   hSetBuffering stdin NoBuffering

@@ -1,10 +1,10 @@
-module SeqCheck (
+module Fractals (
   Fractal
 , mandelbrot
 , julia
 ) where
-import Data.Complex (Complex)
-import Codec.Picture (PixelRGB8)
+import Data.Complex (Complex, magnitude)
+import Codec.Picture (PixelRGB8(PixelRGB8))
 import Codec.Picture.Types (Pixel8)
 
 type Criterion a b = (RealFloat a, Ord a) => (Complex a -> Complex a) -> Complex a -> b
@@ -32,9 +32,9 @@ belongs (crit :: Complex a -> Complex a) (co :: Complex a) =
 
 -- https://en.wikipedia.org/wiki/Mandelbrot_set
 mandelbrot :: RealFloat a => Fractal a
-mandelbrot = belongs (0, \z -> z ** 2 + c)
+mandelbrot c = belongs (\z -> z ** 2 + c) 0
 
 -- https://en.wikipedia.org/wiki/Julia_set
 julia :: RealFloat a => Complex a -> Fractal a
-julia p = belongs (c, snd $ mandelbrot p)
+julia p = belongs (\z -> z ** 2 + p)
 
