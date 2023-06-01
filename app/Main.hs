@@ -58,25 +58,34 @@ navCanvas = 300
 qualityCanvas :: Int
 qualityCanvas = 2000
 
-interactiveMovement :: Fractal MyReal -> (MyReal, MyReal) -> (MyReal, MyReal) -> (Int, Int) -> IO ()
-interactiveMovement frac (x, y) (w, h) (cw, ch) =
+data RenderInput = RenderInput {
+    frac :: Fractal MyReal
+    , x :: MyReal, y :: MyReal
+    , w :: MyReal, h :: MyReal
+    , cw :: Int, ch :: Int
+  }
+
+interactiveMovement :: RenderInput -> IO ()
+interactiveMovement ri =
   do
+    let RenderInput { frac, x, y, w, h, cw, ch } = ri
     savePngImage "./out.png" (ImageRGB8 $ render frac (cw, ch) (x, y, w, h))
     input <- getChar
     let zc = 1.2
     let zcc = (1 - 1/zc) / 2
     let mc = 0.1
     case input of
-      '+' -> interactiveMovement frac (x + w * zcc, y + h * zcc) (w/zc, h/zc) (navCanvas, navCanvas)
-      '-' -> interactiveMovement frac (x - w * zcc, y - h * zcc) (w*zc, h*zc) (navCanvas, navCanvas)
-      'h' -> interactiveMovement frac (x - w * mc, y) (w, h) (navCanvas, navCanvas)
-      'j' -> interactiveMovement frac (x, y + h * mc) (w, h) (navCanvas, navCanvas)
-      'k' -> interactiveMovement frac (x, y - h * mc) (w, h) (navCanvas, navCanvas)
-      'l' -> interactiveMovement frac (x + w * mc, y) (w, h) (navCanvas, navCanvas)
-      'q' -> interactiveMovement frac (x + w * mc, y) (w, h) (qualityCanvas, qualityCanvas)
+      '+' -> interactiveMovement $ ri { x = x + w * zcc, y = y + h * zcc, w = w/zc, h = h/zc }
+      '-' -> interactiveMovement $ ri { x = x - w * zcc, y = y - h * zcc, w = w*zc, h = h*zc }
+      'h' -> interactiveMovement $ ri { x = x - w * mc }
+      'j' -> interactiveMovement $ ri { y = y + h * mc }
+      'k' -> interactiveMovement $ ri { y = y - h * mc }
+      'l' -> interactiveMovement $ ri { x = x + w * mc }
+      'q' -> interactiveMovement $ ri { cw = qualityCanvas, ch = qualityCanvas }
+      'u' -> interactiveMovement $ ri { cw = navCanvas, ch = navCanvas }
       _ -> do
         putStrLn "Unrecognized input"
-        interactiveMovement frac (x, y) (w, h) (cw, ch)
+        interactiveMovement ri
 
 
 main :: IO ()
@@ -101,4 +110,4 @@ main = do
   print ("Use + and - to zoom" :: String)
   print ("Use hjkl to navigate" :: String)
   hSetBuffering stdin NoBuffering
-  interactiveMovement frac (-1.5, -1.1) (2.2, 2.2) (navCanvas, navCanvas)
+  interactiveMovement $ RenderInput {frac=frac, x=(-1.5), y=(-1.1), w=2.2, h=2.2, cw=navCanvas, ch=navCanvas}
