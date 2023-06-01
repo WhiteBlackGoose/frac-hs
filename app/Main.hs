@@ -2,16 +2,16 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Main where
 import Data.Complex (Complex ((:+)), magnitude)
-import Codec.Picture (generateImage, Pixel, PixelRGB8 (PixelRGB8), Pixel8, savePngImage, DynamicImage (ImageRGB8))
+import Codec.Picture (generateImage, PixelRGB8 (PixelRGB8), Pixel8, savePngImage, DynamicImage (ImageRGB8))
 import Codec.Picture.Types (Image)
 import System.IO (hSetBuffering)
 import GHC.IO.StdHandles (stdin)
 import GHC.IO.Handle (BufferMode(NoBuffering))
-import Codec.Picture.Metadata (Value(String))
 
 type MyReal = Double
 
-type Criterion a b = (RealFloat a, Ord a, Pixel b) => (Complex a -> Complex a) -> Complex a -> b
+type Criterion a b = (RealFloat a, Ord a) => (Complex a -> Complex a) -> Complex a -> b
+
 
 belongs :: forall a. Criterion a PixelRGB8
 belongs (crit :: Complex a -> Complex a) (co :: Complex a) =
@@ -31,14 +31,14 @@ belongs (crit :: Complex a -> Complex a) (co :: Complex a) =
       in
         PixelRGB8 0 (255 - col8) (col8 `div` 2)
 
-type Fractal a = (RealFloat a) => Complex a -> (Complex a, Complex a -> Complex a)
+type Fractal a = Complex a -> (Complex a, Complex a -> Complex a)
 
 -- https://en.wikipedia.org/wiki/Mandelbrot_set
-mandelbrot :: Fractal a
+mandelbrot :: RealFloat a => Fractal a
 mandelbrot c = (0, \z -> z ** 2 + c)
 
 -- https://en.wikipedia.org/wiki/Julia_set
-julia :: Complex a -> Fractal a
+julia :: RealFloat a => Complex a -> Fractal a
 julia p c = (c, snd $ mandelbrot p)
 
 render :: Fractal MyReal -> (Int, Int) -> (MyReal, MyReal, MyReal, MyReal) -> Image PixelRGB8
@@ -90,7 +90,7 @@ interactiveMovement ri =
 
 main :: IO ()
 main = do
-  mapM_ print ([
+  mapM_ putStrLn ([
     "Hello user!",
     "Choose fractal",
     "m for mandelbrot",
@@ -100,14 +100,14 @@ main = do
   frac <- case frType of
       "m" -> return mandelbrot
       "j" -> do
-        print ("Specify c" :: String)
+        print ("Specify c in format Re :+ Im" :: String)
         cs <- getLine
         let c :: Complex MyReal = read cs
         return (julia c)
       _ -> do
         print ("Unrecognized input, defaulting to mandelbrot" :: String)
         return mandelbrot
-  print ("Use + and - to zoom" :: String)
-  print ("Use hjkl to navigate" :: String)
+  putStrLn ("Use + and - to zoom" :: String)
+  putStrLn ("Use hjkl to navigate" :: String)
   hSetBuffering stdin NoBuffering
   interactiveMovement $ RenderInput {frac=frac, x=(-1.5), y=(-1.1), w=2.2, h=2.2, cw=navCanvas, ch=navCanvas}
