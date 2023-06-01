@@ -13,22 +13,23 @@ type MyReal = Double
 
 type Criterion a b = (RealFloat a, Ord a, Pixel b) => (Complex a -> Complex a) -> Complex a -> b
 
-belongs :: Criterion a PixelRGB8
-belongs =
+belongs :: forall a. Criterion a PixelRGB8
+belongs (crit :: Complex a -> Complex a) (co :: Complex a) =
   let
     maxPrec :: Int = 50
-    belongs prec crit c
-      | magnitude c >= 2.0 =
-        let
-          frac :: Float = fromIntegral prec / fromIntegral maxPrec
-          col = 255 * frac
-          col8 :: Pixel8 = round col
-        in
-          PixelRGB8 0 (255 - col8) (col8 `div` 2)
-      | prec == 0 = PixelRGB8 255 255 255
-      | otherwise = belongs (prec-1) crit (crit c)
+    z = takeWhile ((<=2.0) . magnitude) (iterate crit co :: [Complex a])
+    n = [0..maxPrec]
+    iter = length $ zip z n
   in
-    belongs maxPrec
+    if iter == maxPrec then
+      PixelRGB8 255 255 255
+    else 
+      let
+        frac :: Float = 1 - fromIntegral iter / fromIntegral maxPrec
+        col = 255 * frac
+        col8 :: Pixel8 = round col
+      in
+        PixelRGB8 0 (255 - col8) (col8 `div` 2)
 
 type FractalSeq a = (RealFloat a) => Complex a -> Complex a -> Complex a
 type InitialPoint a = Complex a -> Complex a
