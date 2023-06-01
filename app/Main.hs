@@ -25,8 +25,7 @@ belongs (crit :: Complex a -> Complex a) (co :: Complex a) =
       PixelRGB8 0 0 0
     else
       let
-        posSigm x = 2 * 1.5 ** x / (1 + 1.5 ** x) - 1
-        frac = 1 - (fromIntegral iter + posSigm (magnitude c - 2)) / fromIntegral maxPrec
+        frac = 1 - fromIntegral iter / fromIntegral maxPrec
         col = 255 * frac
         col8 :: Pixel8 = round col
       in
