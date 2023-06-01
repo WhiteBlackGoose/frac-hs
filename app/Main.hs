@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Main where
 import Data.Complex (Complex ((:+)))
-import Codec.Picture (generateImage, PixelRGB8, savePngImage, DynamicImage (ImageRGB8))
+import Codec.Picture (generateImage, PixelRGB8, savePngImage, DynamicImage (ImageRGB8), writeGifAnimation, GifLooping (LoopingForever))
 import Codec.Picture.Types (Image)
 import System.IO (hSetBuffering)
 import GHC.IO.StdHandles (stdin)
@@ -50,8 +50,8 @@ interactiveMovement ri =
         interactiveMovement ri
 
 
-main :: IO ()
-main = do
+interactIO :: IO ()
+interactIO = do
   mapM_ putStrLn ([
     "Hello user!",
     "Choose fractal",
@@ -72,3 +72,26 @@ main = do
   putStrLn ("Use hjkl to navigate" :: String)
   hSetBuffering stdin NoBuffering
   interactiveMovement $ RenderInput {frac=frac, x, y, w, h, csize=navCanvas, color=Colors.colorEU}
+
+renderGifIO :: IO ()
+renderGifIO =
+  let
+    e = exp 1
+    juliaParams =
+      map ((e**) . (0 :+)) [0, 0.1..(2*pi)]
+    julias
+      = map Fractals.julia juliaParams
+    anim =
+      writeGifAnimation "./out.gif" 0 LoopingForever $ map (\julia -> 
+        render julia Colors.color2 (900, 600) (-1.5, -1, 3, 2)) julias
+  in
+    case anim of
+      Left s -> do
+        putStrLn s
+        return ()
+      Right io ->
+        io
+
+
+main :: IO ()
+main = renderGifIO
