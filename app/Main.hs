@@ -30,11 +30,10 @@ qualityCanvas :: Int
 qualityCanvas = 2000
 
 data RenderInput = RenderInput {
-    frac :: Fractal MyReal
-    , x :: MyReal, y :: MyReal
-    , w :: MyReal, h :: MyReal
-    , csize :: Int
-    , color :: Color
+    frac :: !(Fractal MyReal)
+    , x,y,w,h :: !MyReal
+    , csize :: !Int
+    , color :: !Color
   }
 
 interactiveMovement :: RenderInput -> IO ()
