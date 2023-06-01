@@ -1,18 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Main where
-import Data.Complex (Complex ((:+)), magnitude)
-import Codec.Picture (generateImage, PixelRGB8 (PixelRGB8), Pixel8, savePngImage, DynamicImage (ImageRGB8))
+import Data.Complex (Complex ((:+)))
+import Codec.Picture (generateImage, PixelRGB8, savePngImage, DynamicImage (ImageRGB8))
 import Codec.Picture.Types (Image)
 import System.IO (hSetBuffering)
 import GHC.IO.StdHandles (stdin)
 import GHC.IO.Handle (BufferMode(NoBuffering))
 import Fractals (Fractal)
 import qualified Fractals (mandelbrot, julia)
-import Control.Exception (throw)
-import GHC.IO.Exception (ioException)
-import Control.Exception.Base (throwIO)
-import Text.Read (readMaybe)
 
 type MyReal = Double
 
