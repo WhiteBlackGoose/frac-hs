@@ -6,12 +6,13 @@ module Fractals (
 import Data.Complex (Complex, magnitude)
 import Codec.Picture (PixelRGB8(PixelRGB8))
 import Codec.Picture.Types (Pixel8)
+import Color (PixelHSV8(PixelHSV8))
 
 type Criterion a b = (RealFloat a, Ord a) => (Complex a -> Complex a) -> Complex a -> b
 
-type Fractal a = Complex a -> PixelRGB8
+type Fractal a = Complex a -> PixelHSV8
 
-belongs :: forall a. Criterion a PixelRGB8
+belongs :: forall a. Criterion a PixelHSV8
 belongs (crit :: Complex a -> Complex a) (co :: Complex a) =
   let
     maxPrec :: Int = 50
@@ -20,14 +21,14 @@ belongs (crit :: Complex a -> Complex a) (co :: Complex a) =
     (_, iter) = last $ zip z n
   in
     if iter == maxPrec then
-      PixelRGB8 0 0 0
+      PixelHSV8 0 0 0
     else
       let
         frac = 1 - fromIntegral iter / fromIntegral maxPrec
         col = 255 * frac
         col8 :: Pixel8 = round col
       in
-        PixelRGB8 0 (255 - col8) (col8 `div` 2)
+        PixelHSV8 0 (255 - col8) (col8 `div` 2)
 
 
 -- https://en.wikipedia.org/wiki/Mandelbrot_set

@@ -12,7 +12,7 @@ import qualified Fractals (mandelbrot, julia)
 
 type MyReal = Double
 
-render :: Fractal MyReal -> (Int, Int) -> (MyReal, MyReal, MyReal, MyReal) -> Image PixelRGB8
+render :: Fractal MyReal -> (Int, Int) -> (MyReal, MyReal, MyReal, MyReal) -> DynamicImage
 render frac (w, h) (rx, ry, rw, rh) =
   generateImage (\x y ->
       let
