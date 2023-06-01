@@ -43,20 +43,23 @@ color2 :: Color
 color2 (maxIter, iter) =
   let
     -- https://www.rapidtables.com/convert/color/hsv-to-rgb.html
+    -- https://de.wikipedia.org/wiki/HSV-Farbraum#Umrechnung_HSV_in_RGB
     h :: Float = fromIntegral iter / fromIntegral maxIter
+    hi :: Int = floor $ h * 6
     s :: Float = 1.0
     v :: Float = 0.7
+    f :: Float = h * 6 - fromIntegral hi
 
-    c :: Float = v * s
-    x :: Float = c * (fromIntegral . (1-) . abs . (`subtract` 1) . (`mod` 2) . round . (*6) $ h)
-    m :: Float = v - c
+    p :: Float = v * (1 - s)
+    q :: Float = v * (1 - s * f)
+    t :: Float = v * (1 - s * (1 - f))
 
     (r', g', b')
-      | h <= 1/6 = (c, x, 0)
-      | h <= 2/6 = (x, c, 0)
-      | h <= 3/6 = (0, c, x)
-      | h <= 4/6 = (0, x, c)
-      | h <= 5/6 = (x, 0, c)
-      | otherwise = (c, 0, x)
+      | hi == 1 = (q, v, p)
+      | hi == 2 = (p, v, t)
+      | hi == 3 = (p, q, v)
+      | hi == 4 = (t, p, v)
+      | hi == 5 = (v, p, q)
+      | otherwise = (v, t, p)
   in
-    PixelRGB8 (round $ (r'+m)*255) (round $ (g'+m)*255) (round $ (b'+m)*255)
+    PixelRGB8 (round $ r'*255) (round $ g'*255) (round $ b'*255)
