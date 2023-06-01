@@ -73,13 +73,7 @@ main = do
     askForInput = do
       frType <- getLine
       case frType of
-          "j" -> do
-            putStrLn "Specify c in format Re :+ Im"
-            cs <- getLine
-            let c :: Maybe (Complex MyReal) = readMaybe cs
-            case c of
-              Just c -> return (Fractals.julia c, -1.5, -1, 3, 2)
-              Nothing -> askForInput
+          "j" -> return (Fractals.julia ((-0.5251993) :+ (-0.5251993)), -1.5, -1, 3, 2)
           "m" -> return (Fractals.mandelbrot, -1.5, -1.1, 2.2, 2.2)
           _ -> do
             putStrLn "Unrecognized input, try again"
