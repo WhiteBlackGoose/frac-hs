@@ -9,6 +9,10 @@ import GHC.IO.StdHandles (stdin)
 import GHC.IO.Handle (BufferMode(NoBuffering))
 import Fractals (Fractal)
 import qualified Fractals (mandelbrot, julia)
+import Control.Exception (throw)
+import GHC.IO.Exception (ioException)
+import Control.Exception.Base (throwIO)
+import Text.Read (readMaybe)
 
 type MyReal = Double
 
@@ -31,14 +35,14 @@ data RenderInput = RenderInput {
     frac :: Fractal MyReal
     , x :: MyReal, y :: MyReal
     , w :: MyReal, h :: MyReal
-    , cw :: Int, ch :: Int
+    , csize :: Int
   }
 
 interactiveMovement :: RenderInput -> IO ()
 interactiveMovement ri =
   do
-    let RenderInput { frac, x, y, w, h, cw, ch } = ri
-    savePngImage "./out.png" (ImageRGB8 $ render frac (cw, ch) (x, y, w, h))
+    let RenderInput { frac, x, y, w, h, csize } = ri
+    savePngImage "./out.png" (ImageRGB8 $ render frac (csize, round $ fromIntegral csize * h / w) (x, y, w, h))
     input <- getChar
     let zc = 1.2
     let zcc = (1 - 1/zc) / 2
@@ -50,8 +54,8 @@ interactiveMovement ri =
       'j' -> interactiveMovement $ ri { y = y + h * mc }
       'k' -> interactiveMovement $ ri { y = y - h * mc }
       'l' -> interactiveMovement $ ri { x = x + w * mc }
-      'q' -> interactiveMovement $ ri { cw = qualityCanvas, ch = qualityCanvas }
-      'u' -> interactiveMovement $ ri { cw = navCanvas, ch = navCanvas }
+      'q' -> interactiveMovement $ ri { csize = qualityCanvas }
+      'u' -> interactiveMovement $ ri { csize = navCanvas }
       _ -> do
         putStrLn "Unrecognized input"
         interactiveMovement ri
@@ -65,18 +69,23 @@ main = do
     "m for mandelbrot",
     "j for julia set"
     ] :: [String])
-  frType <- getLine
-  frac <- case frType of
-      "m" -> return Fractals.mandelbrot
-      "j" -> do
-        print ("Specify c in format Re :+ Im" :: String)
-        cs <- getLine
-        let c :: Complex MyReal = read cs
-        return (Fractals.julia c)
-      _ -> do
-        print ("Unrecognized input, defaulting to mandelbrot" :: String)
-        return Fractals.mandelbrot
+  let
+    askForInput = do
+      frType <- getLine
+      case frType of
+          "j" -> do
+            putStrLn "Specify c in format Re :+ Im"
+            cs <- getLine
+            let c :: Maybe (Complex MyReal) = readMaybe cs
+            case c of
+              Just c -> return (Fractals.julia c, -1.5, -1, 3, 2)
+              Nothing -> askForInput
+          "m" -> return (Fractals.mandelbrot, -1.5, -1.1, 2.2, 2.2)
+          _ -> do
+            putStrLn "Unrecognized input, try again"
+            askForInput
+  (frac, x, y, w, h) <- askForInput
   putStrLn ("Use + and - to zoom" :: String)
   putStrLn ("Use hjkl to navigate" :: String)
   hSetBuffering stdin NoBuffering
-  interactiveMovement $ RenderInput {frac=frac, x=(-1.5), y=(-1.1), w=2.2, h=2.2, cw=navCanvas, ch=navCanvas}
+  interactiveMovement $ RenderInput {frac=frac, x, y, w, h, csize=navCanvas}
