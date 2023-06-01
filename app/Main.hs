@@ -9,21 +9,23 @@ import GHC.IO.StdHandles (stdin)
 import GHC.IO.Handle (BufferMode(NoBuffering))
 import Fractals (Fractal)
 import qualified Fractals (mandelbrot, julia)
+import qualified Colors (color1, colorEU, color2)
+import Colors (Color)
 
 type MyReal = Double
 
-render :: Fractal MyReal -> (Int, Int) -> (MyReal, MyReal, MyReal, MyReal) -> Image PixelRGB8
-render frac (w, h) (rx, ry, rw, rh) =
+render :: Fractal MyReal -> Color -> (Int, Int) -> (MyReal, MyReal, MyReal, MyReal) -> Image PixelRGB8
+render frac color (w, h) (rx, ry, rw, rh) =
   generateImage (\x y ->
       let
         thX :: MyReal = fromIntegral x / fromIntegral w * rw + rx
         thY :: MyReal = fromIntegral y / fromIntegral h * rh + ry
         c = thX :+ thY
       in
-        frac c) w h
+        color (frac c)) w h
 
 navCanvas :: Int
-navCanvas = 300
+navCanvas = 100
 qualityCanvas :: Int
 qualityCanvas = 2000
 
@@ -32,13 +34,14 @@ data RenderInput = RenderInput {
     , x :: MyReal, y :: MyReal
     , w :: MyReal, h :: MyReal
     , csize :: Int
+    , color :: Color
   }
 
 interactiveMovement :: RenderInput -> IO ()
 interactiveMovement ri =
   do
-    let RenderInput { frac, x, y, w, h, csize } = ri
-    savePngImage "./out.png" (ImageRGB8 $ render frac (csize, round $ fromIntegral csize * h / w) (x, y, w, h))
+    let RenderInput { frac, x, y, w, h, csize, color } = ri
+    savePngImage "./out.png" (ImageRGB8 $ render frac color (csize, round $ fromIntegral csize * h / w) (x, y, w, h))
     input <- getChar
     let zc = 1.2
     let zcc = (1 - 1/zc) / 2
@@ -78,4 +81,4 @@ main = do
   putStrLn ("Use + and - to zoom" :: String)
   putStrLn ("Use hjkl to navigate" :: String)
   hSetBuffering stdin NoBuffering
-  interactiveMovement $ RenderInput {frac=frac, x, y, w, h, csize=navCanvas}
+  interactiveMovement $ RenderInput {frac=frac, x, y, w, h, csize=navCanvas, color=Colors.color1}
