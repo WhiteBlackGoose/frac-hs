@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# LANGUAGE BangPatterns #-}
 module Main where
 import Data.Complex (Complex ((:+)))
 import Codec.Picture (generateImage, PixelRGB8, savePngImage, DynamicImage (ImageRGB8), writeGifAnimation, GifLooping (LoopingForever))
@@ -12,6 +13,8 @@ import qualified Fractals (mandelbrot, julia)
 import qualified Colors (color1, colorEU, color2)
 import Colors (Color)
 import Renderer (render)
+import Data.Traversable (forM)
+import Data.Foldable (forM_)
 
 navCanvas :: Int
 navCanvas = 200
@@ -78,13 +81,21 @@ renderGifIO =
   let
     e = exp 1
     juliaParams =
-      map ((e**) . (0 :+)) [0, 0.1..(2*pi)]
+      map ((e**) . (0 :+)) [0, 0.01..(2*pi)]
     julias
       = map Fractals.julia juliaParams
     anim =
       writeGifAnimation "./out.gif" 0 LoopingForever $ map (\julia -> 
         render julia Colors.color2 (900, 600) (-1.5, -1, 3, 2)) julias
-  in
+  in do
+    seq <- forM (zip julias [1..]) (\(julia, i) -> do
+        putStrLn ( "Step #"++show i++"/"++show(length juliaParams) )
+        -- Non-lazy evaluation to ensure correctness of printing step thingy
+        let !im = render julia Colors.color2 (900, 600) (-1.5, -1, 3, 2)
+        return im
+      )
+    let
+      anim = writeGifAnimation "./out.gif" 0 LoopingForever seq
     case anim of
       Left s -> do
         putStrLn s
