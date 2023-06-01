@@ -21,8 +21,8 @@ belongs (crit :: Complex a -> Complex a) (co :: Complex a) =
     n = [0..maxPrec]
     iter = length $ zip z n
   in
-    if iter == maxPrec then
-      PixelRGB8 255 255 255
+    if iter == maxPrec+1 then
+      PixelRGB8 0 0 0
     else
       let
         frac :: Float = 1 - fromIntegral iter / fromIntegral maxPrec
@@ -48,7 +48,7 @@ render frac (w, h) (rx, ry, rw, rh) =
         thX :: MyReal = fromIntegral x / fromIntegral w * rw + rx
         thY :: MyReal = fromIntegral y / fromIntegral h * rh + ry
         c = thX :+ thY
-        (crit, init) = frac c
+        (init, crit) = frac c
       in
         belongs crit init) w h
 
