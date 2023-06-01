@@ -19,5 +19,5 @@ belongs :: (Complex Double -> Complex Double) -> Complex Double -> (Int, Int)
 belongs crit co =
     (maxPrec, length (take maxPrec z))
   where
-    maxPrec :: Int = 80
+    maxPrec :: Int = 150
     z = takeWhile ((<=2.0) . magnitude) (iterate crit co)

@@ -8,6 +8,8 @@ Then watch `./out.png` with some imageviewer.
 
 ![](./mandel5.gif)
 
+![](./out.png)
+
 ### Fractals
 
 - [Mandelbrot](https://en.wikipedia.org/wiki/Mandelbrot_set)
