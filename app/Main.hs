@@ -14,7 +14,6 @@ import qualified Colors (color1, colorEU, color2)
 import Colors (Color)
 import Renderer (render)
 import Data.Traversable (forM)
-import Data.Foldable (forM_)
 
 navCanvas :: Int
 navCanvas = 200
@@ -84,14 +83,11 @@ renderGifIO =
       map ((e**) . (0 :+)) [3.365, 3.3653..3.43]
     julias
       = map Fractals.julia juliaParams
-    anim =
-      writeGifAnimation "./out.gif" 0 LoopingForever $ map (\julia -> 
-        render julia Colors.color2 (900, 600) (-1.5, -1, 3, 2)) julias
   in do
     seq <- forM (zip julias [1..]) (\(julia, i) -> do
         putStrLn ( "Step #"++show i++"/"++show(length juliaParams) )
         -- Non-lazy evaluation to ensure correctness of printing step thingy
-        let !im = render julia Colors.color2 (1200, 800) (-1.5, -1, 3, 2)
+        let !im = render julia Colors.color2 (600, 400) (-1.5, -1, 3, 2)
         return im
       )
     let
