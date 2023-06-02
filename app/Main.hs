@@ -101,4 +101,4 @@ renderGifIO =
 
 
 main :: IO ()
-main = renderGifIO
+main = interactIO
